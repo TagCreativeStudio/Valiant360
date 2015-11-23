@@ -54,7 +54,8 @@ three.js r65 or higher
             muted: true,
             debug: false,
             flatProjection: false,
-            autoplay: true
+            autoplay: true,
+            pointerLock: true
         };
 
     // The actual plugin constructor
@@ -303,7 +304,7 @@ three.js r65 or higher
 
         },
 
-        onMouseMove: function() {
+        onMouseMove: function(event) {
             this._onPointerDownPointerX = event.clientX;
             this._onPointerDownPointerY = -event.clientY;
 
@@ -314,12 +315,19 @@ three.js r65 or higher
 
             if(this.options.clickAndDrag) {
                 if(this._mouseDown) {
-                    x = event.pageX - this._dragStart.x;
-                    y = event.pageY - this._dragStart.y;
-                    this._dragStart.x = event.pageX;
-                    this._dragStart.y = event.pageY;
-                    this._lon += x;
-                    this._lat -= y;
+                    if (this.options.pointerLock) {
+                        this._lon += event.movementX;
+                        this._lat -= event.movementY;
+                    }
+                    else {
+                        x = event.pageX - this._dragStart.x;
+                        y = event.pageY - this._dragStart.y;
+                        this._dragStart.x = event.pageX;
+                        this._dragStart.y = event.pageY;
+                        this._lon += x;
+                        this._lat -= y;
+                    }
+                    
                 }
             } else {
                 x = event.pageX - $(this.element).find('canvas').offset().left;
@@ -361,10 +369,36 @@ three.js r65 or higher
             this._mouseDown = true;
             this._dragStart.x = event.pageX;
             this._dragStart.y = event.pageY;
+
+            if (this.options.pointerLock) {
+                var el = event.target;
+                if (el.tagName.toLowerCase() != 'canvas') {
+                    return;
+                }
+
+                if (el.requestPointerLock) {
+                    el.requestPointerLock();
+                } else if (el.mozRequestPointerLock) {
+                    el.mozRequestPointerLock();
+                } else if (el.webkitRequestPointerLock) {
+                    el.webkitRequestPointerLock();
+                }
+            }
+            
         },
 
         onMouseUp: function() {
             this._mouseDown = false;
+
+            if (this.options.pointerLock) {
+                if (document.exitPointerLock) {
+                    document.exitPointerLock();
+                } else if (document.mozExitPointerLock) {
+                    document.mozExitPointerLock();
+                } else if (document.webkitExitPointerLock) {
+                    document.webkitExitPointerLock();
+                }
+            }
         },
 
         animate: function() {
